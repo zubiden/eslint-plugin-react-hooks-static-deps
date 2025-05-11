@@ -2,6 +2,7 @@
  * eslint-plugin-react-hooks.development.js
  *
  * Copyright (c) Facebook, Inc. and its affiliates.
+ * Original code from: https://github.com/stoikio/eslint-plugin-react-hooks-static-deps
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -626,11 +627,11 @@ var ExhaustiveDeps = {
             "Assignments to the '" +
             key +
             "' variable from inside React Hook " +
-            (context.getSource(reactiveHook) + " will be lost after each ") +
+            (context.getSourceCode().getText(reactiveHook) + " will be lost after each ") +
             "render. To preserve the value over time, store it in a useRef " +
             "Hook and keep the mutable value in the '.current' property. " +
             "Otherwise, you can move this variable directly inside " +
-            (context.getSource(reactiveHook) + "."),
+            (context.getSourceCode().getText(reactiveHook) + "."),
         });
       } // Remember which deps are stable and report bad usage first.
 
@@ -739,7 +740,7 @@ var ExhaustiveDeps = {
         // the user this in an error.
         reportProblem({
           node: declaredDependenciesNode,
-          message: "React Hook " + context.getSource(reactiveHook) + " was passed a " + "dependency list that is not an array literal. This means we " + "can't statically verify whether you've passed the correct " + "dependencies.",
+          message: "React Hook " + context.getSourceCode().getText(reactiveHook) + " was passed a " + "dependency list that is not an array literal. This means we " + "can't statically verify whether you've passed the correct " + "dependencies.",
         });
       } else {
         declaredDependenciesNode.elements.forEach(function (declaredDependencyNode) {
@@ -751,7 +752,7 @@ var ExhaustiveDeps = {
           if (declaredDependencyNode.type === "SpreadElement") {
             reportProblem({
               node: declaredDependencyNode,
-              message: "React Hook " + context.getSource(reactiveHook) + " has a spread " + "element in its dependency array. This means we can't " + "statically verify whether you've passed the " + "correct dependencies.",
+              message: "React Hook " + context.getSourceCode().getText(reactiveHook) + " has a spread " + "element in its dependency array. This means we can't " + "statically verify whether you've passed the " + "correct dependencies.",
             });
             return;
           } // Try to normalize the declared dependency. If we can't then an error
@@ -778,7 +779,7 @@ var ExhaustiveDeps = {
               } else {
                 reportProblem({
                   node: declaredDependencyNode,
-                  message: "React Hook " + context.getSource(reactiveHook) + " has a " + "complex expression in the dependency array. " + "Extract it to a separate variable so it can be statically checked.",
+                  message: "React Hook " + context.getSourceCode().getText(reactiveHook) + " has a " + "complex expression in the dependency array. " + "Extract it to a separate variable so it can be statically checked.",
                 });
               }
 
@@ -1025,7 +1026,7 @@ var ExhaustiveDeps = {
         }
 
         if (isPropsOnlyUsedInMembers) {
-          extraWarning = " However, 'props' will change when *any* prop changes, so the " + "preferred fix is to destructure the 'props' object outside of " + ("the " + reactiveHookName + " call and refer to those specific props ") + ("inside " + context.getSource(reactiveHook) + ".");
+          extraWarning = " However, 'props' will change when *any* prop changes, so the " + "preferred fix is to destructure the 'props' object outside of " + ("the " + reactiveHookName + " call and refer to those specific props ") + ("inside " + context.getSourceCode().getText(reactiveHook) + ".");
         }
       }
 
@@ -1168,7 +1169,7 @@ var ExhaustiveDeps = {
         node: declaredDependenciesNode,
         message:
           "React Hook " +
-          context.getSource(reactiveHook) +
+          context.getSourceCode().getText(reactiveHook) +
           " has " + // To avoid a long message, show the next actionable item.
           (getWarningMessage(missingDependencies, "a", "missing", "include") || getWarningMessage(unnecessaryDependencies, "an", "unnecessary", "exclude") || getWarningMessage(duplicateDependencies, "a", "duplicate", "omit")) +
           extraWarning,
@@ -1238,7 +1239,7 @@ var ExhaustiveDeps = {
             return; // Handled
           } // We'll do our best effort to find it, complain otherwise.
 
-          var variable = context.getScope().set.get(callback.name);
+          var variable = context.getSourceCode().getScope(callback).set.get(callback.name);
 
           if (variable == null || variable.defs == null) {
             // If it's not in scope, we don't care.
@@ -1767,7 +1768,9 @@ function getNodeWithoutReactNamespace(node, options) {
   }
 
   return node;
-} // What's the index of callback that needs to be analyzed for a given Hook?
+}
+
+// What's the index of callback that needs to be analyzed for a given Hook?
 // -1 if it's not a Hook we care about (e.g. useState).
 // 0 for useEffect/useMemo/useCallback(fn).
 // 1 for useImperativeHandle(ref, fn).
@@ -1834,7 +1837,7 @@ function parseAdditionalHooks(optionValue) {
   }
 }
 /**
- * ESLint won't assign node.parent to references from context.getScope()
+ * ESLint won't assign node.parent to references from context.getSourceCode().getScope()
  *
  * So instead we search for the node from an ancestor assigning node.parent
  * as we go. This mutates the AST.

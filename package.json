@@ -15,7 +15,7 @@
     "build:clean": "rm -rf ./dist"
   },
   "devDependencies": {
-    "terser": "^5.10.0"
+    "terser": "^5.39.0"
   },
   "files": [
     "dist/**/*"
